@@ -1,0 +1,50 @@
+# docker-compose.yml
+services:
+  catalog:
+    build: ./catalog
+    container_name: catalog
+    volumes:
+      - catalog_data:/data
+    ports:
+      - "5001:5001"
+
+  order:
+    build: ./order
+    container_name: order
+    environment:
+      - CATALOG_HOST=catalog
+      - CATALOG_PORT=5001
+    volumes:
+      - order_data:/data
+    depends_on:
+      - catalog
+    ports:
+      - "5002:5002"
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    environment:
+      - CATALOG_HOST=catalog
+      - CATALOG_PORT=5001
+      - ORDER_HOST=order
+      - ORDER_PORT=5002
+    depends_on:
+      - catalog
+      - order
+    ports:
+      - "5000:5000"
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    depends_on:
+      - frontend
+  
+    command: /bin/sh -c "sleep 5 && nginx -g 'daemon off;'"
+    ports:
+      - "80:80"
+
+volumes:
+  catalog_data:
+  order_data:
