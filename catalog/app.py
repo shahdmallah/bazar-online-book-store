@@ -1,14 +1,11 @@
 from flask import Flask, jsonify, request
 import csv, os
 
-# Location of the CSV file inside the container volume
 DATA_FILE = os.environ.get("CATALOG_FILE", "/data/catalog_data.csv")
 
 app = Flask(__name__)
 
-# -------------------------------
-# Utility Functions
-# -------------------------------
+
 def read_catalog():
     books = []
     if not os.path.exists(DATA_FILE):
@@ -32,9 +29,8 @@ def write_catalog(books):
         writer.writerows(books)
 
 
-# -------------------------------
 # API Endpoints
-# -------------------------------
+
 
 # RETURN ALL BOOKS
 @app.route("/books", methods=["GET"])
@@ -108,8 +104,5 @@ def update():
     })
 
 
-# -------------------------------
-# Run the service
-# -------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)

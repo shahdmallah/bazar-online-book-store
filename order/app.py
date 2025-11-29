@@ -13,9 +13,7 @@ ORDERS_FILE = os.environ.get("ORDERS_FILE", "/data/orders_log.csv")
 app = Flask(__name__)
 
 
-# -----------------------------------------
-# Utility functions
-# -----------------------------------------
+
 def read_orders():
     if not os.path.exists(ORDERS_FILE):
         return []
@@ -35,10 +33,6 @@ def append_order(order):
             writer.writeheader()
         writer.writerow(order)
 
-
-# -----------------------------------------
-# POST /order  → place a new order
-# -----------------------------------------
 @app.route("/order", methods=["POST"])
 def place_order():
     data = request.get_json() or {}
@@ -102,16 +96,11 @@ def place_order():
     }), 200
 
 
-# -----------------------------------------
-# GET /orders → list all orders
-# -----------------------------------------
+
 @app.route("/orders", methods=["GET"])
 def list_orders():
     return jsonify(read_orders())
 
 
-# -----------------------------------------
-# Run service
-# -----------------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5002)
