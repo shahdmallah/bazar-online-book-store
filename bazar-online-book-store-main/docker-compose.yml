@@ -14,6 +14,7 @@ services:
       - FRONTEND_PORT=5000
       - REQUEST_TIMEOUT=5
       - CACHE_MAX_ITEMS=200
+      - USE_CACHE=0
     depends_on:
       - catalog1
       - catalog2
@@ -49,7 +50,7 @@ services:
       - REQUEST_TIMEOUT=5
     volumes:
       - catalog2_data:/data
-  
+
   order1:
     build: ./order
     container_name: order1
@@ -67,7 +68,6 @@ services:
       - "5002:5002"
     depends_on:
       - catalog1
-      - frontend
 
   order2:
     build: ./order
@@ -84,7 +84,6 @@ services:
       - order2_data:/data
     depends_on:
       - catalog2
-      - frontend
 
   nginx:
     build: ./nginx

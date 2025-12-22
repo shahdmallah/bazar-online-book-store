@@ -4,12 +4,9 @@ import csv, os, requests
 app = Flask(__name__)
 
 DATA_FILE = os.environ.get("CATALOG_FILE", "/data/catalog_data.csv")
-
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://frontend:5000")
-
 CATALOG_REPLICA_NAME = os.environ.get("CATALOG_REPLICA_NAME", "catalog1")
-CATALOG_PEER_URL = os.environ.get("CATALOG_PEER_URL") 
-
+CATALOG_PEER_URL = os.environ.get("CATALOG_PEER_URL")  
 REQUEST_TIMEOUT = float(os.environ.get("REQUEST_TIMEOUT", "5"))
 
 
@@ -17,7 +14,6 @@ def read_catalog():
     books = []
     if not os.path.exists(DATA_FILE):
         return books
-
     with open(DATA_FILE, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -46,6 +42,12 @@ def invalidate_cache(item_id: int):
     except Exception:
         pass
 
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok", "component": "catalog", "replica": CATALOG_REPLICA_NAME}), 200
+
+
 @app.route("/replicate_update", methods=["POST"])
 def replicate_update():
     data = request.get_json(silent=True) or {}
@@ -66,10 +68,8 @@ def replicate_update():
                 if new_qty < 0:
                     return jsonify({"error": "not enough stock"}), 400
                 b["quantity"] = new_qty
-
             if price is not None:
                 b["price"] = float(price)
-
             updated = True
             break
 
@@ -79,21 +79,13 @@ def replicate_update():
     write_catalog(books)
     return jsonify({"status": "ok"}), 200
 
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status": "ok", "component": "catalog", "replica": CATALOG_REPLICA_NAME}), 200
-
-
-# RETURN ALL BOOKS
-@app.route("/books", methods=["GET"])
-def get_books():
-    return jsonify(read_catalog()), 200
 
 @app.route("/search/<topic>", methods=["GET"])
 def search(topic):
     books = read_catalog()
     results = [{"id": b["id"], "title": b["title"]} for b in books if topic.lower() in b["topic"].lower()]
     return jsonify(results), 200
+
 
 @app.route("/info/<int:item_id>", methods=["GET"])
 def info(item_id):
@@ -102,6 +94,7 @@ def info(item_id):
         if b["id"] == item_id:
             return jsonify(b), 200
     return jsonify({"error": "item not found"}), 404
+
 
 @app.route("/update", methods=["PUT"])
 def update():
@@ -112,11 +105,12 @@ def update():
 
     if item_id is None:
         return jsonify({"error": "missing id"}), 400
-
     item_id = int(item_id)
+
 
     invalidate_cache(item_id)
 
+  
     books = read_catalog()
     updated = False
     result_row = None
@@ -128,10 +122,8 @@ def update():
                 if new_qty < 0:
                     return jsonify({"error": "not enough stock"}), 400
                 b["quantity"] = new_qty
-
             if price is not None:
                 b["price"] = float(price)
-
             updated = True
             result_row = b
             break
@@ -141,6 +133,7 @@ def update():
 
     write_catalog(books)
 
+  
     replicated = False
     if CATALOG_PEER_URL:
         try:
